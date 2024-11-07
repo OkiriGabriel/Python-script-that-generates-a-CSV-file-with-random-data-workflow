@@ -50,6 +50,9 @@ on:
   schedule:
     - cron: '0 0 * * *'  # Runs daily at midnight
   workflow_dispatch:      # Allows manual trigger
+  push:
+    branches:
+      - 'master'          # Trigger the workflow on push to the master branch
 
 jobs:
   generate-data:
@@ -81,7 +84,7 @@ jobs:
         git add *.csv
         timestamp=$(date '+%Y-%m-%d %H:%M:%S')
         git commit -m "Sales data update: ${timestamp}" || echo "No changes to commit"
-        git push origin main
+        git push origin master
 
     - name: Upload CSV as artifact
       uses: actions/upload-artifact@v3
