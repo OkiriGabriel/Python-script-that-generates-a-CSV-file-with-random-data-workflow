@@ -1,0 +1,59 @@
+name: Apptio Data Export
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight
+  workflow_dispatch:      # Allows manual trigger
+
+jobs:
+  export-data:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0    # Fetch all history for proper git operations
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas requests
+
+    - name: Run Apptio export script
+      env:
+        APPTIO_KEY: ${{ secrets.APPTIO_KEY }}  
+      run: python apptio_export.py  # Replace with your script's filename
+
+    - name: Commit and push new data file
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+        git add *.csv
+        
+        timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        git commit -m "Data export update: ${timestamp}" || echo "No changes to commit"
+        
+        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+
+    - name: Upload CSV as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: apptio-export-${{ github.run_number }}
+        path: '*.csv'
+        retention-days: 30  # Keep files for 30 days
+
+    - name: Check file creation
+      run: |
+        if ls *.csv 1> /dev/null 2>&1; then
+          echo "CSV file(s) successfully created"
+        else
+          echo "Error: No CSV files found"
+          exit 1
+        fi

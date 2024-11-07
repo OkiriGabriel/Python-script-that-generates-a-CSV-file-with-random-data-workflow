@@ -101,7 +101,7 @@ jobs:
         git add *.csv
         timestamp=$(date '+%Y-%m-%d %H:%M:%S')
         git commit -m "Sales data update: ${timestamp}" || echo "No changes to commit"
-        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/OkiriGabriel/Python-script-that-generates-a-CSV-file-with-random-data-workflow.git HEAD:master
+        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:master
 
     - name: Upload CSV as artifact
       uses: actions/upload-artifact@v3
