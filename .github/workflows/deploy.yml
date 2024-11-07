@@ -44,6 +44,7 @@
 #         path: '*.csv'
 #         retention-days: 30
 
+
 name: Generate Sales Data
 
 on:
@@ -53,6 +54,9 @@ on:
   push:
     branches:
       - 'master'          # Trigger the workflow on push to the master branch
+
+permissions:
+  contents: write  # Allow the workflow to push to the repository
 
 jobs:
   generate-data:
@@ -64,18 +68,31 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: List files in the repository
+      run: |
+        echo "Listing files in the current directory:"
+        ls -al
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.x'
 
+    - name: Check if requirements.txt exists
+      run: |
+        if [ ! -f "requirements.txt" ]; then
+          echo "Error: requirements.txt not found!"
+          exit 1
+        fi
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt  # Install from requirements.txt
+        pip install -r requirements.txt  # Ensure it is in the root directory
 
     - name: Run script
-      run: python generate_sales.py
+      run: |
+        python generate_sales.py  # Make sure the path is correct
 
     - name: Commit and push new data file
       run: |
@@ -84,7 +101,7 @@ jobs:
         git add *.csv
         timestamp=$(date '+%Y-%m-%d %H:%M:%S')
         git commit -m "Sales data update: ${timestamp}" || echo "No changes to commit"
-        git push origin master
+        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/OkiriGabriel/Python-script-that-generates-a-CSV-file-with-random-data-workflow.git HEAD:master
 
     - name: Upload CSV as artifact
       uses: actions/upload-artifact@v3
